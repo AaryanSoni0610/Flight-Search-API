@@ -6,117 +6,601 @@
     <title>SkyPath Flight Search</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/plugin/utc.min.js"></script>
+    <script>dayjs.extend(window.dayjs_plugin_utc)</script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+    </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
-    <div class="container mx-auto px-4 py-8 max-w-5xl">
-        <header class="mb-10 text-center">
-            <h1 class="text-4xl font-extrabold text-blue-600 tracking-tight">SkyPath</h1>
-            <p class="text-slate-500 mt-2 font-medium">Find the optimal connection for your journey</p>
-        </header>
+    
+    <!-- Navbar / Header -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="bg-blue-600 text-white p-1.5 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                </div>
+                <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">SkyPath</h1>
+            </div>
+            <!-- Future User Account / Settings here -->
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        <!-- Search Form -->
-        <div class="bg-white rounded-xl shadow-lg p-8 mb-10 border border-slate-100">
-            <form id="searchForm" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                <div class="md:col-span-1">
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Origin</label>
-                    <input type="text" id="origin" name="origin" placeholder="e.g. JFK" 
-                           class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase transition-colors" 
-                           maxlength="3" required>
-                </div>
-                <div class="md:col-span-1">
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Destination</label>
-                    <input type="text" id="destination" name="destination" placeholder="e.g. LAX" 
-                           class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase transition-colors" 
-                           maxlength="3" required>
-                </div>
-                <div class="md:col-span-1">
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Date</label>
-                    <input type="date" id="date" name="date" 
-                           class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
-                           required>
-                </div>
-                <div class="md:col-span-1">
+        <!-- Left Sidebar: Search & Filters -->
+        <aside class="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
+            
+            <!-- Search Widget -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    Search Flights
+                </h2>
+                <form id="searchForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="relative">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Origin</label>
+                            <input type="text" id="origin" name="origin" placeholder="JFK" 
+                                   class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all uppercase font-bold" 
+                                   autocomplete="off" required>
+                            <div id="originDropdown" class="absolute z-50 left-0 right-0 top-[calc(100%+4px)] bg-white border border-slate-200 rounded-lg shadow-xl max-h-64 overflow-y-auto hidden">
+                                <!-- Dynamic Items -->
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Destination</label>
+                            <input type="text" id="destination" name="destination" placeholder="LAX" 
+                                   class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all uppercase font-bold" 
+                                   autocomplete="off" required>
+                            <div id="destinationDropdown" class="absolute z-50 left-0 right-0 top-[calc(100%+4px)] bg-white border border-slate-200 rounded-lg shadow-xl max-h-64 overflow-y-auto hidden">
+                                <!-- Dynamic Items -->
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Date</label>
+                        <input type="date" id="date" name="date" 
+                               class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                               required>
+                    </div>
                     <button type="submit" 
-                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors shadow-md hover:shadow-lg flex justify-center items-center gap-2">
-                        <span id="searchBtnText">Search Flights</span>
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex justify-center items-center gap-2 mt-2">
+                        <span id="searchBtnText">Find Flights</span>
                         <svg id="searchSpinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </button>
-                </div>
-            </form>
-            <div id="errorContainer" class="hidden mt-4 bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded text-sm"></div>
-        </div>
+                    <div id="errorContainer" class="hidden mt-2 text-red-600 text-sm bg-red-50 p-3 rounded border border-red-100"></div>
+                </form>
+            </div>
 
-        <!-- Results Section -->
-        <div id="resultsTitle" class="hidden text-xl font-bold text-slate-800 mb-4 pl-1">Itineraries</div>
-        <div id="resultsContainer" class="space-y-6">
-            <!-- Results will be injected here -->
-        </div>
-        
-        <!-- Empty State -->
-        <div id="emptyState" class="hidden text-center py-16 bg-white rounded-xl shadow-inner border border-dashed border-slate-200">
-            <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-            <h3 class="mt-2 text-sm font-medium text-slate-900">No itineraries found</h3>
-            <p class="mt-1 text-sm text-slate-500">Try adjusting your search criteria or dates.</p>
+            <!-- Filters Widget -->
+            <div id="filtersWidget" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 opacity-50 pointer-events-none transition-opacity">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                        Filters
+                    </h2>
+                    <button id="resetFilters" class="text-xs text-blue-600 hover:underline font-medium">Reset</button>
+                </div>
+                
+                <!-- Sort By -->
+                <div class="mb-5">
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Sort By</label>
+                    <div class="relative">
+                        <select id="sortBy" class="w-full pl-3 pr-10 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 appearance-none">
+                            <option value="default">Recommended</option>
+                            <option value="duration">Fastest (Duration)</option>
+                            <option value="price_asc">Price (Low to High)</option>
+                            <option value="departure_time">Departure Time</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stops -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Stops</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="stops" value="0" checked class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                            <span class="text-sm text-slate-700">Non-stop</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="stops" value="1" checked class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                            <span class="text-sm text-slate-700">1 Stop</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="stops" value="2" checked class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                            <span class="text-sm text-slate-700">2 Stops</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Right Content: Results -->
+        <main class="lg:col-span-8">
+            <div id="resultsHeader" class="flex justify-between items-end mb-4 hidden">
+                <h2 class="text-xl font-bold text-slate-800">Itineraries</h2>
+                <span id="resultsCount" class="text-sm text-slate-500 font-medium"></span>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="flex flex-col justify-center items-center min-h-[60vh]">
+                <div class="inline-flex bg-slate-50 p-6 rounded-full mb-6 ring-1 ring-slate-100/50">
+                    <svg class="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-slate-700">Ready for takeoff?</h3>
+                <p class="text-slate-400 mt-2 max-w-sm mx-auto text-center leading-relaxed">Select your origin and destination to start exploring available flights.</p>
+            </div>
+            
+            <!-- No Results Found State -->
+            <div id="noResultsState" class="hidden flex flex-col justify-center items-center py-20 min-h-[50vh]">
+                <div class="inline-flex bg-slate-50 p-6 rounded-full mb-6 ring-1 ring-slate-100/50">
+                    <svg class="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-slate-700">No flights found</h3>
+                <p class="text-slate-400 mt-2">We couldn't find any itineraries for your search terms.</p>
+            </div>
+
+            <div id="resultsContainer" class="space-y-4">
+                <!-- Results injected via JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Segment Detail Modal -->
+    <div id="detailsModal" class="fixed inset-0 z-[60] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity opacity-0" id="modalBackdrop" onclick="closeModal()"></div>
+    
+        <div class="fixed inset-0 z-10 w-screen overflow-hidden">
+            <div class="flex min-h-full items-center justify-center p-4 text-center">
+                <!-- Modal Panel -->
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:w-full sm:max-w-2xl opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95 max-h-[85vh] flex flex-col" id="modalPanel">
+                    
+                    <!-- Header -->
+                    <div class="bg-white px-4 pt-5 pb-2 sm:p-6 sm:pb-2 flex-shrink-0 z-10">
+                        <div class="sm:flex sm:items-center">
+                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                                <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                                <h3 class="text-base font-semibold leading-6 text-slate-900" id="modal-title">Flight Details</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Content -->
+                    <div class="px-4 pb-4 sm:px-6 sm:pb-6 overflow-y-auto custom-scrollbar flex-1">
+                         <div class="sm:ml-14" id="modalContent">
+                            <!-- Dynamic Content -->
+                         </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 flex-shrink-0 border-t border-slate-100">
+                        <button type="button" class="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto transition-colors" onclick="closeModal()">Close</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- JavaScript Logic -->
     <script>
-        document.getElementById('searchForm').addEventListener('submit', async function(e) {
+        // Global State
+        let currentData = [];
+        let filteredData = [];
+        let airports = [];
+
+        // DOM Elements
+        const searchForm = document.getElementById('searchForm');
+        const filtersWidget = document.getElementById('filtersWidget');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const emptyState = document.getElementById('emptyState');
+        const noResultsState = document.getElementById('noResultsState');
+        const resultsHeader = document.getElementById('resultsHeader');
+        
+        // Modal Elements
+        const modal = document.getElementById('detailsModal');
+        const modalBackdrop = document.getElementById('modalBackdrop');
+        const modalPanel = document.getElementById('modalPanel');
+        const modalContent = document.getElementById('modalContent');
+
+        // Load airports
+        async function loadAirports() {
+            try {
+                const response = await fetch('/airports_proxy');
+                airports = await response.json();
+                populateDatalists();
+            } catch (error) {
+                console.error('Failed to load airports:', error);
+            }
+        }
+
+        // Helper to format dropdown item
+        function createDropdownItem(airport) {
+            return `
+                <div class="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors" 
+                     onclick="selectAirport('${airport.code}', this.closest('.absolute').id)">
+                    <div class="flex items-center justify-between">
+                         <span class="font-bold text-slate-800">${airport.code}</span>
+                         <span class="text-xs text-slate-400 font-mono">${airport.country || ''}</span>
+                    </div>
+                    <div class="text-sm text-slate-600 truncate">${airport.name}</div>
+                    <div class="text-xs text-slate-400">${airport.city}</div>
+                </div>
+            `;
+        }
+
+        function populateDropdown(type, items) {
+            const dropdown = document.getElementById(`${type}Dropdown`);
+            if (items.length === 0) {
+                 dropdown.innerHTML = '<div class="px-4 py-3 text-sm text-slate-500 italic text-center">No airports found</div>';
+            } else {
+                 dropdown.innerHTML = items.map(a => createDropdownItem(a)).join('');
+            }
+        }
+
+        function selectAirport(code, dropdownId) {
+            const type = dropdownId.replace('Dropdown', '');
+            const input = document.getElementById(type);
+            input.value = code;
+            
+            // Hide dropdown
+            document.getElementById(dropdownId).classList.add('hidden');
+            
+            // Trigger change logic
+            populateDropdowns(); 
+        }
+
+        function populateDropdowns() {
+            const originVal = document.getElementById('origin').value.toUpperCase();
+            const destVal = document.getElementById('destination').value.toUpperCase();
+            
+            // We only need to repopulate if the dropdowns are visible, or prepare data
+            // But for simplicity, we let the input event handlers drive the filtering
+        }
+
+        // Logic to filter and show
+        function setupDropdownLogic(type, otherType) {
+            const input = document.getElementById(type);
+            const dropdown = document.getElementById(`${type}Dropdown`);
+            
+            // Input: Filter & Show
+            input.addEventListener('input', () => {
+                const filter = input.value.toLowerCase();
+                const otherVal = document.getElementById(otherType).value.toUpperCase();
+                
+                const filtered = airports.filter(a => {
+                    const matchesFilter = a.code.toLowerCase().includes(filter) || 
+                                          a.name.toLowerCase().includes(filter) || 
+                                          a.city.toLowerCase().includes(filter);
+                    const notSelected = a.code !== otherVal;
+                    return matchesFilter && notSelected;
+                });
+                
+                populateDropdown(type, filtered);
+                dropdown.classList.remove('hidden');
+            });
+
+            // Focus: Show all (except selected)
+            input.addEventListener('focus', () => {
+                const otherVal = document.getElementById(otherType).value.toUpperCase();
+                const filtered = airports.filter(a => a.code !== otherVal);
+                populateDropdown(type, filtered);
+                dropdown.classList.remove('hidden');
+            });
+
+            // Blur: Delay hide to allow click
+            // Alternatively, use click outside listener
+        }
+        
+        setupDropdownLogic('origin', 'destination');
+        setupDropdownLogic('destination', 'origin');
+
+        // Click outside to close dropdowns
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#origin') && !e.target.closest('#originDropdown')) {
+                document.getElementById('originDropdown').classList.add('hidden');
+            }
+            if (!e.target.closest('#destination') && !e.target.closest('#destinationDropdown')) {
+                document.getElementById('destinationDropdown').classList.add('hidden');
+            }
+        });
+
+        // Event Listeners (Search)
+        searchForm.addEventListener('submit', handleSearch);
+
+        // Event Listeners (Filters)
+        document.getElementById('sortBy').addEventListener('change', applyFilters);
+        document.querySelectorAll('input[name="stops"]').forEach(cb => cb.addEventListener('change', applyFilters));
+        document.getElementById('resetFilters').addEventListener('click', () => {
+            document.getElementById('sortBy').value = 'default';
+            document.querySelectorAll('input[name="stops"]').forEach(cb => cb.checked = true);
+            applyFilters();
+        });
+
+        async function handleSearch(e) {
             e.preventDefault();
             
-            const origin = document.getElementById('origin').value.toUpperCase();
-            const destination = document.getElementById('destination').value.toUpperCase();
+            const originInput = document.getElementById('origin');
+            const destInput = document.getElementById('destination');
+            const origin = originInput.value.trim();
+            const destination = destInput.value.trim();
             const date = document.getElementById('date').value;
             
-            // UI State: Loading
-            const btn = document.querySelector('button[type="submit"]');
-            const btnText = document.getElementById('searchBtnText');
-            const spinner = document.getElementById('searchSpinner');
-            const resultsContainer = document.getElementById('resultsContainer');
+            // Clear previous errors
             const errorContainer = document.getElementById('errorContainer');
-            const emptyState = document.getElementById('emptyState');
-            const resultsTitle = document.getElementById('resultsTitle');
-
-            btn.disabled = true;
-            btnText.textContent = 'Searching...';
-            spinner.classList.remove('hidden');
             errorContainer.classList.add('hidden');
-            emptyState.classList.add('hidden');
-            resultsContainer.innerHTML = '';
-            resultsTitle.classList.add('hidden');
+
+            // 1. Client-side Validation: Existence Check
+            if (airports.length > 0) {
+                 const originExists = airports.some(a => a.code === origin);
+                 const destExists = airports.some(a => a.code === destination);
+
+                 if (!originExists) {
+                     errorContainer.textContent = `Origin airport '${origin}' not found. Please select from the dropdown.`;
+                     errorContainer.classList.remove('hidden');
+                     return;
+                 }
+                 if (!destExists) {
+                    errorContainer.textContent = `Destination airport '${destination}' not found. Please select from the dropdown.`;
+                    errorContainer.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            setLoading(true);
 
             try {
                 const response = await fetch(`/search_proxy?origin=${origin}&destination=${destination}&date=${date}`);
                 
                 if (!response.ok) {
                     const error = await response.json();
-                    throw new Error(error.detail || 'Failed to fetch results');
+                    let msg = error.detail || 'Failed to fetch results';
+                    
+                    // Handle FastAPI validation errors (array of objects)
+                    if (Array.isArray(msg)) {
+                        msg = msg.map(err => {
+                             const field = err.loc ? err.loc[err.loc.length - 1] : 'Field';
+                             return `${field}: ${err.msg}`;
+                        }).join(', ');
+                    } else if (typeof msg === 'object') {
+                        msg = JSON.stringify(msg);
+                    }
+                    
+                    throw new Error(msg);
                 }
 
                 const data = await response.json();
+                currentData = data; // Store raw data
                 
-                if (data.length === 0) {
-                    emptyState.classList.remove('hidden');
-                } else {
-                    resultsTitle.classList.remove('hidden');
-                    renderResults(data);
-                }
+                // Enable filters
+                filtersWidget.classList.remove('opacity-50', 'pointer-events-none');
+                
+                // Initial Apply
+                applyFilters();
 
             } catch (err) {
-                errorContainer.textContent = err.message;
-                errorContainer.classList.remove('hidden');
-            } finally {
-                btn.disabled = false;
-                btnText.textContent = 'Search Flights';
-                spinner.classList.add('hidden');
+                document.getElementById('errorContainer').textContent = err.message;
+                document.getElementById('errorContainer').classList.remove('hidden');
+                setLoading(false);
             }
-        });
+        }
 
+        function applyFilters() {
+            // 1. Filter by stops
+            const checkedStops = Array.from(document.querySelectorAll('input[name="stops"]:checked')).map(cb => parseInt(cb.value));
+            
+            filteredData = currentData.filter(itinerary => {
+                const stops = itinerary.segments.length - 1;
+                return checkedStops.includes(stops);
+            });
+
+            // 2. Sort
+            const sortBy = document.getElementById('sortBy').value;
+            filteredData.sort((a, b) => {
+                if (sortBy === 'default') {
+                    // direct -> 1stop -> 2 stops
+                    const stopsA = a.segments.length;
+                    const stopsB = b.segments.length;
+                    if (stopsA !== stopsB) return stopsA - stopsB;
+                    // internal sorting by cheapest price
+                    return a.total_price - b.total_price;
+                }
+                if (sortBy === 'price_asc') return a.total_price - b.total_price;
+                if (sortBy === 'duration') return a.total_duration_minutes - b.total_duration_minutes;
+                if (sortBy === 'departure_time') {
+                     return new Date(a.segments[0].departureTime) - new Date(b.segments[0].departureTime);
+                }
+                return 0;
+            });
+
+            // 3. Render
+            renderResults(filteredData);
+            setLoading(false);
+        }
+
+        function renderResults(itineraries) {
+            resultsContainer.innerHTML = '';
+            
+            if (itineraries.length === 0) {
+                if (currentData.length > 0) {
+                     // Data exists but filtered out
+                     noResultsState.classList.remove('hidden');
+                     emptyState.classList.add('hidden');
+                     resultsHeader.classList.add('hidden');
+                } else {
+                     // No data at all
+                     noResultsState.classList.remove('hidden');
+                     emptyState.classList.add('hidden');
+                     resultsHeader.classList.add('hidden');
+                }
+                document.getElementById('resultsCount').textContent = '';
+                return;
+            }
+
+            noResultsState.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            resultsHeader.classList.remove('hidden');
+            document.getElementById('resultsCount').textContent = `${itineraries.length} options found`;
+
+            itineraries.forEach(itinerary => {
+                const card = createItineraryCard(itinerary);
+                resultsContainer.appendChild(card);
+            });
+        }
+
+        function createItineraryCard(itinerary) {
+            const card = document.createElement('div');
+            // Entire card clickable to open modal
+            card.onclick = (e) => {
+                 openDetailsModal(itinerary);
+            };
+            card.className = 'bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group mb-4 relative';
+
+            const segments = itinerary.segments;
+            const firstSegment = segments[0];
+            const lastSegment = segments[segments.length - 1];
+            
+            // Route Info
+            const originCode = firstSegment.origin;
+            const destCode = lastSegment.destination;
+            const depTime = formatTime(firstSegment.departureTime);
+            const arrTime = formatTime(lastSegment.arrivalTime);
+            const mainAirline = firstSegment.airline;
+            const airlineCode = mainAirline.substring(0, 2).toUpperCase();
+            const flightNumber = firstSegment.flightNumber;
+            const aircraft = firstSegment.aircraft;
+
+            // Helper to get city
+            const getCity = (code) => {
+                const airport = airports.find(a => a.code === code);
+                return airport ? airport.city : '';
+            };
+            const originCity = getCity(originCode);
+            const destCity = getCity(destCode);
+
+            // Date Check (Next Day Arrival)
+            const depDate = dayjs(firstSegment.departureTime);
+            const arrDate = dayjs(lastSegment.arrivalTime);
+            const isNextDay = !depDate.isSame(arrDate, 'day');
+            const nextDayLabel = isNextDay ? '<sup class="text-red-500 font-semibold text-[10px] ml-0.5">+1</sup>' : '';
+
+            // Stops Logic
+            const stopCount = segments.length - 1;
+            let stopText = 'Direct';
+            let stopColor = 'text-green-600';
+            let stopDetails = '';
+            
+            if (stopCount === 1) {
+                stopText = '1 Stop';
+                stopColor = 'text-amber-600';
+                stopDetails = `in ${firstSegment.destination}`;
+            } else if (stopCount > 1) {
+                stopText = `${stopCount} Stops`;
+                stopColor = 'text-amber-600';
+                const stops = segments.slice(0, -1).map(s => s.destination).join(', ');
+                stopDetails = `in ${stops}`;
+            }
+
+            card.innerHTML = `
+                <div class="absolute top-3 right-3 z-10">
+                    <span class="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 group-hover:text-blue-700">
+                        View Details 
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                    </span>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center justify-between gap-6 mt-2 md:mt-0">
+                    
+                    <!-- 1. Horizontal Scan Lane (Airline + Times) -->
+                    <div class="flex items-center gap-6 w-full md:w-auto flex-1">
+                        <div class="flex flex-col items-center gap-1 shrink-0">
+                            <div class="h-10 w-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600 font-bold text-xs shrink-0">
+                                ${airlineCode}
+                            </div>
+                            <div class="text-[10px] text-slate-400 font-mono text-center leading-tight">
+                                ${flightNumber}
+                            </div>
+                        </div>
+                        
+                        <!-- Route Narrative -->
+                        <div class="flex items-center gap-4 flex-1 w-full justify-between">
+                            
+                            <!-- Origin -->
+                            <div class="text-right min-w-[100px]">
+                                <div class="text-xl font-bold text-slate-800">${depTime}</div>
+                                <div class="text-sm font-bold text-slate-700 mt-0.5">
+                                    ${originCode} <span class="text-slate-400 font-normal">(${originCity})</span>
+                                </div>
+                            </div>
+
+                            <!-- Visualization -->
+                            <div class="flex flex-col items-center px-4 flex-1">
+                                <div class="text-xs text-slate-500 font-bold mb-1.5">${formatDuration(itinerary.total_duration_minutes)}</div>
+                                
+                                <div class="w-full relative flex items-center justify-center h-2 min-w-[80px]">
+                                    <div class="absolute inset-x-0 h-[2px] bg-slate-200"></div>
+                                    <div class="absolute left-0 w-1.5 h-1.5 bg-slate-300 rounded-full"></div>
+                                    <div class="absolute right-0 w-1.5 h-1.5 bg-slate-300 rounded-full"></div>
+                                    
+                                    ${stopCount > 0 ? 
+                                        `<div class="z-10 bg-white px-1">
+                                            <div class="w-2 h-2 rounded-full border border-slate-300 bg-white ring-2 ring-white"></div>
+                                         </div>` : 
+                                        '' 
+                                    }
+                                </div>
+
+                                <div class="text-[10px] uppercase tracking-wider font-bold mt-1.5 ${stopColor} whitespace-nowrap text-center">
+                                    ${stopText} <span class="text-slate-400 font-normal normal-case block sm:inline">${stopDetails}</span>
+                                </div>
+                            </div>
+
+                            <!-- Destination -->
+                            <div class="text-left min-w-[100px]">
+                                <div class="text-xl font-bold text-slate-800">${arrTime}${nextDayLabel}</div>
+                                <div class="text-sm font-bold text-slate-700 mt-0.5">
+                                    ${destCode} <span class="text-slate-400 font-normal">(${destCity})</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- 3. De-emphasized Price & Action -->
+                    <div class="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto gap-4 md:gap-1 mt-2 md:mt-0 pl-4 border-l border-slate-100 md:border-l-0">
+                        <div class="text-xl font-bold text-slate-700">$${itinerary.total_price.toFixed(0)}</div>
+                    </div>
+
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // --- Helpers ---
         function formatDuration(minutes) {
             const h = Math.floor(minutes / 60);
             const m = Math.floor(minutes % 60).toString().padStart(2, '0');
@@ -127,91 +611,130 @@
             return dayjs(isoString).format('HH:mm');
         }
 
-        function renderResults(itineraries) {
-            const container = document.getElementById('resultsContainer');
+        function setLoading(isLoading) {
+            const btn = searchForm.querySelector('button[type="submit"]');
+            const spinner = document.getElementById('searchSpinner');
+            const btnText = document.getElementById('searchBtnText');
+            const errorContainer = document.getElementById('errorContainer');
             
-            itineraries.forEach(itinerary => {
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-xl shadow border border-slate-100 hover:shadow-md transition-shadow overflow-hidden';
-                
-                // Summarize segments
-                const segments = itinerary.segments;
-                const stops = segments.length - 1;
-                const totalPrice = itinerary.total_price.toFixed(2);
-                const totalDuration = formatDuration(itinerary.total_duration_minutes);
-                
-                // Header (Summary)
-                let headerHtml = `
-                    <div class="bg-slate-50 px-6 py-4 flex justify-between items-center border-b border-slate-100">
-                        <div class="flex items-center gap-4">
-                            <div class="font-bold text-lg text-slate-800">${formatDuration(itinerary.total_duration_minutes)}</div>
-                            <div class="text-sm text-slate-500 font-medium px-2 py-0.5 rounded-full bg-slate-200">
-                                ${stops === 0 ? 'Direct' : stops === 1 ? '1 Stop' : stops + ' Stops'}
+            if (isLoading) {
+                btn.disabled = true;
+                btnText.textContent = 'Searching...';
+                spinner.classList.remove('hidden');
+                errorContainer.classList.add('hidden');
+                resultsContainer.innerHTML = '';
+            } else {
+                btn.disabled = false;
+                btnText.textContent = 'Find Flights';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        // --- Modal ---
+        function openDetailsModal(itinerary) {
+            const modalContent = document.getElementById('modalContent');
+            let html = '<div class="space-y-6">';
+            
+            itinerary.segments.forEach((seg, i) => {
+                 // Layover divider
+                if (i > 0) {
+                     const layoverMin = itinerary.layovers[i - 1];
+                     html += `
+                        <div class="relative py-3">
+                            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-dashed border-slate-300"></div></div>
+                            <div class="relative flex justify-center">
+                                <span class="bg-white px-3 py-1 text-xs text-amber-700 font-medium border border-amber-200 rounded-full flex items-center gap-1 shadow-sm">
+                                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    ${formatDuration(layoverMin)} connection in ${seg.origin}
+                                </span>
                             </div>
                         </div>
-                        <div class="text-2xl font-bold text-blue-600">$${totalPrice}</div>
-                    </div>
-                `;
+                     `;
+                }
 
-                // Body (Segments)
-                let segmentsHtml = `<div class="p-6 space-y-6">`;
+                // Metadata lookup
+                const originInfo = airports.find(a => a.code === seg.origin) || {};
+                const destInfo = airports.find(a => a.code === seg.destination) || {};
                 
-                segments.forEach((seg, index) => {
-                    // Layover Logic (if not first segment, show layover before this segment)
-                    if (index > 0) {
-                        const layoverMinutes = itinerary.layovers[index - 1];
-                        segmentsHtml += `
-                            <div class="relative py-2">
-                                <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                                    <div class="w-full border-t border-dashed border-slate-300"></div>
-                                </div>
-                                <div class="relative flex justify-center">
-                                    <span class="bg-white px-3 text-xs text-amber-600 font-semibold border border-amber-200 rounded-full">
-                                        Layover in ${seg.origin}: ${formatDuration(layoverMinutes)}
-                                    </span>
-                                </div>
-                            </div>
-                        `;
-                    }
+                let originLabel = originInfo.city || '';
+                let destLabel = destInfo.city || '';
+                
+                // International Check
+                if (originInfo.country !== destInfo.country) {
+                    if (originInfo.country) originLabel += `, ${originInfo.country}`;
+                    if (destInfo.country) destLabel += `, ${destInfo.country}`;
+                }
 
-                    segmentsHtml += `
-                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            <div class="flex items-center gap-4 w-full md:w-1/3">
-                                <div class="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-xs">
-                                    ${seg.airline.substring(0, 2).toUpperCase()}
+                html += `
+                    <div class="border-l-4 border-blue-500 pl-4 py-1">
+                        <div class="font-bold text-slate-800 mb-3 flex flex-wrap gap-1 items-baseline">
+                            <span>Flight ${i+1}</span> 
+                        </div>
+                        <div class="grid grid-cols-2 gap-8 text-sm pt-2">
+                            <div class="text-left border-r border-slate-100 pr-4 flex flex-col justify-between">
+                                <div class="mb-4">
+                                    <div class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Departure</div>
+                                    <div class="text-2xl font-bold text-slate-800 tracking-tight">${dayjs(seg.departureTime).format('HH:mm')}</div>
+                                    <div class="font-medium text-slate-600">${dayjs(seg.departureTime).format('MMM DD')}</div>
+                                    <div class="font-mono text-blue-600 text-[10px] mt-1 bg-blue-50 inline-block px-1.5 py-0.5 rounded">${seg.departureTimeUTC ? dayjs(seg.departureTimeUTC).format('MMM DD, HH:mm') + ' UTC' : '-'}</div>
                                 </div>
                                 <div>
-                                    <div class="font-bold text-slate-700">${seg.airline}</div>
-                                    <div class="text-xs text-slate-400">${seg.flightNumber} • ${seg.aircraft}</div>
+                                    <div class="text-lg font-bold text-slate-800 leading-none">${seg.origin}</div>
+                                    <div class="text-xs font-semibold text-slate-600 mt-1">${originInfo.name || ''}</div>
+                                    <div class="text-xs text-slate-400 mt-0.5">${originLabel}</div>
                                 </div>
                             </div>
-                            
-                            <div class="flex items-center gap-6 w-full md:w-2/3 justify-between">
-                                <div class="text-right flex-1">
-                                    <div class="text-xl font-bold text-slate-800">${formatTime(seg.departureTime)}</div>
-                                    <div class="text-xs text-slate-500 font-bold">${seg.origin}</div>
+                            <div class="text-right pl-4 flex flex-col justify-between">
+                                <div class="mb-4">
+                                    <div class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Arrival</div>
+                                    <div class="text-2xl font-bold text-slate-800 tracking-tight">${dayjs(seg.arrivalTime).format('HH:mm')}</div>
+                                    <div class="font-medium text-slate-600">${dayjs(seg.arrivalTime).format('MMM DD')}</div>
+                                    <div class="font-mono text-blue-600 text-[10px] mt-1 bg-blue-50 inline-block px-1.5 py-0.5 rounded">${seg.arrivalTimeUTC ? dayjs(seg.arrivalTimeUTC).format('MMM DD, HH:mm') + ' UTC' : '-'}</div>
                                 </div>
-                                <div class="flex-1 flex flex-col items-center px-2">
-                                    <div class="text-xs text-slate-400 mb-1">${formatDuration(seg.duration)}</div>
-                                    <div class="w-full h-0.5 bg-slate-300 relative">
-                                        <div class="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-slate-300"></div>
-                                    </div>
+                                <div>
+                                    <div class="text-lg font-bold text-slate-800 leading-none">${seg.destination}</div>
+                                    <div class="text-xs font-semibold text-slate-600 mt-1">${destInfo.name || ''}</div>
+                                    <div class="text-xs text-slate-400 mt-0.5">${destLabel}</div>
                                 </div>
-                                <div class="text-left flex-1">
-                                    <div class="text-xl font-bold text-slate-800">${formatTime(seg.arrivalTime)}</div>
-                                    <div class="text-xs text-slate-500 font-bold">${seg.destination}</div>
+                            </div>
+                            <div class="col-span-2 mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                                <div class="flex items-center gap-2">
+                                     <span class="font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">${seg.airline}</span>
+                                     <span class="text-slate-500">•</span>
+                                     <span class="font-mono text-slate-500">${seg.aircraft}</span>
                                 </div>
+                                <span class="font-bold text-slate-700 bg-green-50 text-green-700 px-2 py-1 rounded border border-green-100">$${seg.price}</span>
                             </div>
                         </div>
-                    `;
-                });
-
-                segmentsHtml += `</div>`;
-
-                card.innerHTML = headerHtml + segmentsHtml;
-                container.appendChild(card);
+                    </div>
+                `;
             });
+            html += '</div>';
+            
+            modalContent.innerHTML = html;
+            modal.classList.remove('hidden');
+            
+            // Animate In
+            setTimeout(() => {
+                modalBackdrop.classList.remove('opacity-0');
+                modalPanel.classList.remove('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
+                modalPanel.classList.add('opacity-100', 'translate-y-0', 'sm:scale-100');
+            }, 10);
         }
+
+        function closeModal() {
+            modalBackdrop.classList.remove('opacity-100');
+            modalPanel.classList.remove('opacity-100', 'translate-y-0', 'sm:scale-100');
+            modalPanel.classList.add('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Initialize state
+        setLoading(false);
+        loadAirports();
     </script>
 </body>
 </html>

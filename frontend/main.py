@@ -14,6 +14,18 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+@app.get("/airports_proxy")
+async def airports_proxy():
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.get(f"{BACKEND_URL}/api/airports", timeout=10.0)
+            if resp.status_code == 200:
+                return resp.json()
+            else:
+                return JSONResponse(status_code=resp.status_code, content=resp.json())
+        except Exception as e:
+            return JSONResponse(status_code=500, content={"detail": f"Frontend proxy error: {str(e)}"})
+
 @app.get("/search_proxy")
 async def search_proxy(origin: str, destination: str, date: str):
     async with httpx.AsyncClient() as client:

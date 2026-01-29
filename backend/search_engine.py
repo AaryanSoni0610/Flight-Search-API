@@ -25,6 +25,8 @@ class FlightSearchEngine:
              try:
                 dep_utc = self._get_utc_time(f.departureTime, f.origin)
                 arr_utc = self._get_utc_time(f.arrivalTime, f.destination)
+                f.departureTimeUTC = dep_utc
+                f.arrivalTimeUTC = arr_utc
                 f.duration = (arr_utc - dep_utc).total_seconds() / 60
              except Exception as e:
                 print(f"Error calculating duration for {f.flightNumber}: {e}")

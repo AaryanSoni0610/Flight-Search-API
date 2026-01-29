@@ -42,6 +42,13 @@ async def health():
         }
     return {"status": "uninitialized"}
 
+@app.get("/api/airports")
+async def get_airports():
+    if not search_engine:
+        raise HTTPException(status_code=503, detail="Search engine not initialized")
+    
+    return list(search_engine.airports.values())
+
 @app.get("/api/search", response_model=List[Itinerary])
 async def search_flights(
     origin: str = Query(..., min_length=3, max_length=3, pattern="^[A-Z]{3}$"),

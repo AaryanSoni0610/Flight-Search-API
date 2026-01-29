@@ -24,6 +24,8 @@ class Flight(BaseModel):
     destination: str
     departureTime: datetime
     arrivalTime: datetime
+    departureTimeUTC: Union[datetime, None] = None
+    arrivalTimeUTC: Union[datetime, None] = None
     price: Annotated[float, BeforeValidator(parse_price)]
     aircraft: str
     duration: float = 0.0
