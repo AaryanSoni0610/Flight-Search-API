@@ -1,0 +1,9 @@
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+python-multipart>=0.0.6
+requests>=2.31.0
+jinja2>=3.1.2
+# Timezone handling for Python 3.11+
+pytz>=2023.3
+# Required for timezone-aware datetime parsing
+pydantic>=2.0.0
