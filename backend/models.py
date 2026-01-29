@@ -26,6 +26,7 @@ class Flight(BaseModel):
     arrivalTime: datetime
     price: Annotated[float, BeforeValidator(parse_price)]
     aircraft: str
+    duration: float = 0.0
 
 class FlightData(BaseModel):
     airports: List[Airport]

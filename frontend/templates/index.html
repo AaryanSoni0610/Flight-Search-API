@@ -5,19 +5,213 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkyPath Flight Search</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <header class="mb-8 text-center">
-            <h1 class="text-4xl font-bold text-blue-600">SkyPath</h1>
-            <p class="text-gray-600 mt-2">Find the best flight connections</p>
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-extrabold text-blue-600 tracking-tight">SkyPath</h1>
+            <p class="text-slate-500 mt-2 font-medium">Find the optimal connection for your journey</p>
         </header>
         
-        <main class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
-            <div class="text-center text-gray-500">
-                <p>Search interface coming soon (Phase 3)</p>
-            </div>
-        </main>
+        <!-- Search Form -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-10 border border-slate-100">
+            <form id="searchForm" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                <div class="md:col-span-1">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Origin</label>
+                    <input type="text" id="origin" name="origin" placeholder="e.g. JFK" 
+                           class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase transition-colors" 
+                           maxlength="3" required>
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Destination</label>
+                    <input type="text" id="destination" name="destination" placeholder="e.g. LAX" 
+                           class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase transition-colors" 
+                           maxlength="3" required>
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Date</label>
+                    <input type="date" id="date" name="date" 
+                           class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                           required>
+                </div>
+                <div class="md:col-span-1">
+                    <button type="submit" 
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors shadow-md hover:shadow-lg flex justify-center items-center gap-2">
+                        <span id="searchBtnText">Search Flights</span>
+                        <svg id="searchSpinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+            <div id="errorContainer" class="hidden mt-4 bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded text-sm"></div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsTitle" class="hidden text-xl font-bold text-slate-800 mb-4 pl-1">Itineraries</div>
+        <div id="resultsContainer" class="space-y-6">
+            <!-- Results will be injected here -->
+        </div>
+        
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-16 bg-white rounded-xl shadow-inner border border-dashed border-slate-200">
+            <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-slate-900">No itineraries found</h3>
+            <p class="mt-1 text-sm text-slate-500">Try adjusting your search criteria or dates.</p>
+        </div>
     </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const origin = document.getElementById('origin').value.toUpperCase();
+            const destination = document.getElementById('destination').value.toUpperCase();
+            const date = document.getElementById('date').value;
+            
+            // UI State: Loading
+            const btn = document.querySelector('button[type="submit"]');
+            const btnText = document.getElementById('searchBtnText');
+            const spinner = document.getElementById('searchSpinner');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const errorContainer = document.getElementById('errorContainer');
+            const emptyState = document.getElementById('emptyState');
+            const resultsTitle = document.getElementById('resultsTitle');
+
+            btn.disabled = true;
+            btnText.textContent = 'Searching...';
+            spinner.classList.remove('hidden');
+            errorContainer.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            resultsContainer.innerHTML = '';
+            resultsTitle.classList.add('hidden');
+
+            try {
+                const response = await fetch(`/search_proxy?origin=${origin}&destination=${destination}&date=${date}`);
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to fetch results');
+                }
+
+                const data = await response.json();
+                
+                if (data.length === 0) {
+                    emptyState.classList.remove('hidden');
+                } else {
+                    resultsTitle.classList.remove('hidden');
+                    renderResults(data);
+                }
+
+            } catch (err) {
+                errorContainer.textContent = err.message;
+                errorContainer.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Search Flights';
+                spinner.classList.add('hidden');
+            }
+        });
+
+        function formatDuration(minutes) {
+            const h = Math.floor(minutes / 60);
+            const m = Math.floor(minutes % 60).toString().padStart(2, '0');
+            return `${h}h ${m}m`;
+        }
+
+        function formatTime(isoString) {
+            return dayjs(isoString).format('HH:mm');
+        }
+
+        function renderResults(itineraries) {
+            const container = document.getElementById('resultsContainer');
+            
+            itineraries.forEach(itinerary => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow border border-slate-100 hover:shadow-md transition-shadow overflow-hidden';
+                
+                // Summarize segments
+                const segments = itinerary.segments;
+                const stops = segments.length - 1;
+                const totalPrice = itinerary.total_price.toFixed(2);
+                const totalDuration = formatDuration(itinerary.total_duration_minutes);
+                
+                // Header (Summary)
+                let headerHtml = `
+                    <div class="bg-slate-50 px-6 py-4 flex justify-between items-center border-b border-slate-100">
+                        <div class="flex items-center gap-4">
+                            <div class="font-bold text-lg text-slate-800">${formatDuration(itinerary.total_duration_minutes)}</div>
+                            <div class="text-sm text-slate-500 font-medium px-2 py-0.5 rounded-full bg-slate-200">
+                                ${stops === 0 ? 'Direct' : stops === 1 ? '1 Stop' : stops + ' Stops'}
+                            </div>
+                        </div>
+                        <div class="text-2xl font-bold text-blue-600">$${totalPrice}</div>
+                    </div>
+                `;
+
+                // Body (Segments)
+                let segmentsHtml = `<div class="p-6 space-y-6">`;
+                
+                segments.forEach((seg, index) => {
+                    // Layover Logic (if not first segment, show layover before this segment)
+                    if (index > 0) {
+                        const layoverMinutes = itinerary.layovers[index - 1];
+                        segmentsHtml += `
+                            <div class="relative py-2">
+                                <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                                    <div class="w-full border-t border-dashed border-slate-300"></div>
+                                </div>
+                                <div class="relative flex justify-center">
+                                    <span class="bg-white px-3 text-xs text-amber-600 font-semibold border border-amber-200 rounded-full">
+                                        Layover in ${seg.origin}: ${formatDuration(layoverMinutes)}
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    segmentsHtml += `
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div class="flex items-center gap-4 w-full md:w-1/3">
+                                <div class="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-xs">
+                                    ${seg.airline.substring(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div class="font-bold text-slate-700">${seg.airline}</div>
+                                    <div class="text-xs text-slate-400">${seg.flightNumber} • ${seg.aircraft}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-6 w-full md:w-2/3 justify-between">
+                                <div class="text-right flex-1">
+                                    <div class="text-xl font-bold text-slate-800">${formatTime(seg.departureTime)}</div>
+                                    <div class="text-xs text-slate-500 font-bold">${seg.origin}</div>
+                                </div>
+                                <div class="flex-1 flex flex-col items-center px-2">
+                                    <div class="text-xs text-slate-400 mb-1">${formatDuration(seg.duration)}</div>
+                                    <div class="w-full h-0.5 bg-slate-300 relative">
+                                        <div class="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-slate-300"></div>
+                                    </div>
+                                </div>
+                                <div class="text-left flex-1">
+                                    <div class="text-xl font-bold text-slate-800">${formatTime(seg.arrivalTime)}</div>
+                                    <div class="text-xs text-slate-500 font-bold">${seg.destination}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                segmentsHtml += `</div>`;
+
+                card.innerHTML = headerHtml + segmentsHtml;
+                container.appendChild(card);
+            });
+        }
+    </script>
 </body>
 </html>

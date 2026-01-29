@@ -8,9 +8,26 @@ class FlightSearchEngine:
         self.airports = {a.code: a for a in airports}
         self.flights_map: Dict[str, List[Flight]] = {}
         for f in flights:
+            # Calculate duration
+            if f.duration == 0.0:
+                 # Note: we need _get_utc_time which relies on self.airports being set
+                 # Since this is inside __init__, we already set self.airports above.
+                 # But we can't call instance method easily if we are just refactoring or we can.
+                 # Actually, we can call self._get_utc_time
+                 pass
+
             if f.origin not in self.flights_map:
                 self.flights_map[f.origin] = []
             self.flights_map[f.origin].append(f)
+        
+        # Second pass to calculate duration properly using the helper method
+        for f in flights:
+             try:
+                dep_utc = self._get_utc_time(f.departureTime, f.origin)
+                arr_utc = self._get_utc_time(f.arrivalTime, f.destination)
+                f.duration = (arr_utc - dep_utc).total_seconds() / 60
+             except Exception as e:
+                print(f"Error calculating duration for {f.flightNumber}: {e}")
 
     def _get_utc_time(self, local_dt: datetime, airport_code: str) -> datetime:
         airport = self.airports.get(airport_code)
@@ -50,8 +67,9 @@ class FlightSearchEngine:
         for f in start_flights:
             self._dfs(f, destination, [f], results)
             
-        # Sort results: shortest duration first
-        results.sort(key=lambda x: x.total_duration_minutes)
+        # Sort results: Primary = Number of stops (0, 1, 2), Secondary = Total Duration
+        # Stops = len(segments) - 1
+        results.sort(key=lambda x: (len(x.segments) - 1, x.total_duration_minutes))
         return results
 
     def _dfs(self, current_flight: Flight, target_dest: str, current_path: List[Flight], results: List[Itinerary]):
