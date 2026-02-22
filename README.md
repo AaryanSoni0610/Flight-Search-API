@@ -169,9 +169,3 @@ The dataset (`flights.json`) includes:
                            │  port 8000           │
                            └─────────────────────┘
 ```
-
----
-
-## 📄 License
-
-This project is for educational and portfolio purposes.
