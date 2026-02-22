@@ -20,7 +20,6 @@ A full-stack flight search engine built with **FastAPI** (backend & frontend) an
 ```
 FlightSearchEngine/
 ├── docker-compose.yml
-├── flights.json                  # Shared flight data (used by Docker volume)
 ├── backend/
 │   ├── Dockerfile
 │   ├── main.py                   # FastAPI backend app & API routes
