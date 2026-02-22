@@ -58,7 +58,7 @@ FlightSearchEngine/
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/AaryanSoni0610/Flight-Search-API
 cd FlightSearchEngine
 
 # Start all services
