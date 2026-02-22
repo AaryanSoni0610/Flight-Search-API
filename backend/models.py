@@ -36,9 +36,7 @@ class FlightData(BaseModel):
 
 class ItinerarySegment(BaseModel):
     flight: Flight
-    duration: float  # In minutes or string, let's keep it simple for now as per reqs (time string maybe?)
-    # actually requirement 4 says "flight segments with flight numbers, times, airports"
-    # We will reuse Flight or a similar structure
+    duration: float
 
 class Itinerary(BaseModel):
     segments: List[Flight]
